@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package mlservice;
+
+// Health Check
+service HealthService {
+  rpc Check (HealthRequest) returns (HealthResponse);
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+}
+
+service DatasetService {
+  rpc ListDatasets (ListDatasetsRequest) returns (ListDatasetsResponse);
+  rpc UploadDataset (UploadDatasetRequest) returns (UploadDatasetResponse);
+}
+
+// Request for listing datasets
+message ListDatasetsRequest {}
+
+// Response with dataset names
+message ListDatasetsResponse {
+  repeated string datasets = 1;
+}
+
+// Uploading a dataset (binary file)
+message UploadDatasetRequest {
+  string filename = 1;
+  bytes content = 2; // raw file bytes
+}
+
+message UploadDatasetResponse {
+  string filename = 1;
+}
+
+// -------------------- Model Service --------------------
+service ModelService {
+  rpc ListModelClasses (ListModelClassesRequest) returns (ListModelClassesResponse);
+  rpc TrainModel (TrainModelRequest) returns (TrainModelResponse);
+  rpc ListModels (ListModelsRequest) returns (ListModelsResponse);
+  rpc Predict (PredictRequest) returns (PredictResponse);
+  rpc Retrain (RetrainRequest) returns (RetrainResponse);
+  rpc DeleteModel (DeleteModelRequest) returns (DeleteModelResponse);
+}
+
+// ------------ Messages ------------
+
+message ListModelClassesRequest {}
+
+message ListModelClassesResponse {
+  repeated string classes = 1;
+}
+
+message TrainModelRequest {
+  string model_type = 1;
+  string dataset_name = 2;
+  string target_column = 3;
+  map<string, string> params = 4;
+}
+
+message TrainModelResponse {
+  string model_id = 1;
+}
+
+message ListModelsRequest {}
+
+message ListModelsResponse {
+  repeated string model_ids = 1;
+}
+
+message PredictRequest {
+  string model_id = 1;
+  repeated Feature features = 2;
+}
+
+message Feature {
+  map<string, double> values = 1;
+}
+
+message PredictResponse {
+  repeated double predictions = 1;
+}
+
+message RetrainRequest {
+  string model_id = 1;
+  map<string, string> params = 2;
+}
+
+message RetrainResponse {
+  string model_id = 1;
+}
+
+message DeleteModelRequest {
+  string model_id = 1;
+}
+
+message DeleteModelResponse {
+  bool deleted = 1;
+}

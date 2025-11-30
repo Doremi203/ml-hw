@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-rest
+  namespace: mlhw
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-rest
+  template:
+    metadata:
+      labels:
+        app: ml-rest
+    spec:
+      containers:
+        - name: ml-rest
+          image: ml-rest:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: CLEARML_API_HOST
+              value: "http://clearml-server-apiserver.clearml.svc.cluster.local:8008"
+            - name: CLEARML_WEB_HOST
+              value: "http://clearml-server-webserver.clearml.svc.cluster.local:8080"
+            - name: CLEARML_FILES_HOST
+              value: "http://clearml-server-fileserver.clearml.svc.cluster.local:8081"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-rest
+  namespace: mlhw
+spec:
+  type: NodePort
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30000
+  selector:
+    app: ml-rest

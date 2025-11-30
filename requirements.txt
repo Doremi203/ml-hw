@@ -1,0 +1,14 @@
+scikit-learn
+pandas
+clearml
+grpcio
+pydantic
+loguru
+fastapi~=0.121.3
+boto3
+python-dotenv
+streamlit
+requests
+plotly
+python-multipart
+uvicorn

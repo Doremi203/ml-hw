@@ -1,0 +1,88 @@
+services:
+  # MinIO S3-compatible object storage
+  minio:
+    image: minio/minio:latest
+    container_name: ml-minio
+    ports:
+      - "9000:9000"    # MinIO API
+      - "9001:9001"    # MinIO Console
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Create MinIO bucket on startup
+  minio-init:
+    image: minio/mc:latest
+    container_name: ml-minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for MinIO to be ready...';
+      until /usr/bin/mc alias set minio http://minio:9000 minio minio123; do
+        echo 'Waiting for MinIO...';
+        sleep 1;
+      done;
+      echo 'MinIO is ready. Creating bucket...';
+      /usr/bin/mc mb minio/ml-datasets-bucket --ignore-existing;
+      /usr/bin/mc policy set public minio/ml-datasets-bucket;
+      echo 'Bucket created successfully!';
+      "
+
+  # ML API Service
+  ml-api:
+    build: .
+    container_name: ml-api
+    ports:
+      - "8000:8000"    # FastAPI
+      - "50051:50051"  # gRPC
+    environment:
+      - S3_BUCKET=ml-datasets-bucket
+      - S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=minio
+      - AWS_SECRET_ACCESS_KEY=minio123
+      - AWS_REGION=us-east-1
+    volumes:
+      - ./data/models:/app/data/models
+      - ./logs:/app/logs
+    depends_on:
+      - minio
+      - minio-init
+    command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  # Streamlit Dashboard
+  streamlit-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: ml-dashboard
+    ports:
+      - "8501:8501"    # Streamlit default port
+    environment:
+      - S3_BUCKET=ml-datasets-bucket
+      - S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=minio
+      - AWS_SECRET_ACCESS_KEY=minio123
+      - AWS_REGION=us-east-1
+      - ML_API_URL=http://ml-api:8000
+    volumes:
+      - ./dashboard:/app/dashboard
+      - ./app:/app/app  # Share app modules with dashboard
+    depends_on:
+      - ml-api
+    command: ["streamlit", "run", "dashboard/app.py", "--server.address", "0.0.0.0", "--server.port", "8501"]
+
+volumes:
+  minio_data:
+
+networks:
+  default:
+    name: ml-network

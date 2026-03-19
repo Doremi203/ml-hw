@@ -4,8 +4,8 @@ services:
     image: minio/minio:latest
     container_name: ml-minio
     ports:
-      - "9000:9000"    # MinIO API
-      - "9001:9001"    # MinIO Console
+      - "9000:9000" # MinIO API
+      - "9001:9001" # MinIO Console
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
@@ -42,8 +42,8 @@ services:
     build: .
     container_name: ml-api
     ports:
-      - "8000:8000"    # FastAPI
-      - "50051:50051"  # gRPC
+      - "8000:8000" # FastAPI
+      - "50051:50051" # gRPC
     environment:
       - S3_BUCKET=ml-datasets-bucket
       - S3_ENDPOINT_URL=http://minio:9000
@@ -56,7 +56,23 @@ services:
     depends_on:
       - minio
       - minio-init
-    command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    command:
+      [
+        "python",
+        "-m",
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+      ]
 
   # Streamlit Dashboard
   streamlit-dashboard:
@@ -65,7 +81,7 @@ services:
       dockerfile: Dockerfile.streamlit
     container_name: ml-dashboard
     ports:
-      - "8501:8501"    # Streamlit default port
+      - "8501:8501" # Streamlit default port
     environment:
       - S3_BUCKET=ml-datasets-bucket
       - S3_ENDPOINT_URL=http://minio:9000
@@ -75,10 +91,19 @@ services:
       - ML_API_URL=http://ml-api:8000
     volumes:
       - ./dashboard:/app/dashboard
-      - ./app:/app/app  # Share app modules with dashboard
+      - ./app:/app/app # Share app modules with dashboard
     depends_on:
       - ml-api
-    command: ["streamlit", "run", "dashboard/app.py", "--server.address", "0.0.0.0", "--server.port", "8501"]
+    command:
+      [
+        "streamlit",
+        "run",
+        "dashboard/app.py",
+        "--server.address",
+        "0.0.0.0",
+        "--server.port",
+        "8501",
+      ]
 
 volumes:
   minio_data:

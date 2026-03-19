@@ -1,6 +1,29 @@
 # Test your FastAPI endpoints
 
+# Basic health check
 GET http://127.0.0.1:8000/health
+Accept: application/json
+
+###
+
+# Liveness/Readiness check
+GET http://127.0.0.1:8000/healthz
+Accept: application/json
+
+###
+
+# Comprehensive health check with all services
+GET http://127.0.0.1:8000/health/services/s3
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8000/health/services/models
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8000/health/services/minio
 Accept: application/json
 
 ###

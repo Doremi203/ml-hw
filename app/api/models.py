@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+import time
 from app.logging.logging import logger
+from app.monitoring.metrics import observe_inference
 from app.services.models import (
     MODEL_CLASSES,
     train_model,
@@ -55,11 +57,16 @@ class PredictRequest(BaseModel):
 @router.post("/{model_id}/predict")
 def predict(model_id: str, req: PredictRequest):
     logger.info(f"Predicting with model {model_id}")
+    started_at = time.perf_counter()
+    status = "success"
 
     try:
         preds = predict_model(model_id, req.features)
     except Exception as e:
+        status = "error"
         raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        observe_inference(time.perf_counter() - started_at, status)
 
     return {"predictions": preds}
 

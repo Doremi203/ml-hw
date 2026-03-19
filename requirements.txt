@@ -12,3 +12,7 @@ requests
 plotly
 python-multipart
 uvicorn
+aiohttp
+prometheus-fastapi-instrumentator
+prometheus-client
+locust

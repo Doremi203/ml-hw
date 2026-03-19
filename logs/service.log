@@ -1,0 +1,25 @@
+2025-11-23 18:32:55.780 | INFO     | app.main:health_check:8 - Health check
+2025-11-23 19:00:24.321 | INFO     | app.api.datasets:upload_dataset:10 - Uploading dataset: test.csv
+2025-11-23 19:02:41.075 | INFO     | app.api.datasets:get_datasets:22 - Listing datasets
+2025-11-23 19:17:54.128 | INFO     | app.api.models:train:25 - Training model: logistic_regression
+2025-11-23 19:18:00.738 | INFO     | app.api.models:train:25 - Training model: logistic_regression
+2025-11-23 19:20:31.473 | INFO     | app.api.models:train:25 - Training model: logistic_regression
+2025-11-23 19:21:05.154 | INFO     | app.api.models:train:25 - Training model: logistic_regression
+2025-11-23 19:34:13.427 | INFO     | app.api.models:delete:84 - Deleting model 6bfa2169-a43b-4627-8d78-b9c7adc36aef
+2025-11-30 16:42:20.996 | INFO     | app.main:health_check:13 - Health check
+2025-11-30 16:42:21.318 | INFO     | app.api.datasets:get_datasets:22 - Listing datasets
+2025-11-30 16:42:46.171 | INFO     | app.main:health_check:13 - Health check
+2025-11-30 16:42:46.181 | INFO     | app.api.datasets:get_datasets:22 - Listing datasets
+2025-11-30 23:11:20.139 | INFO     | app.main:health_check:13 - Health check
+2025-11-30 23:11:20.298 | INFO     | app.api.datasets:get_datasets:22 - Listing datasets
+2025-11-30 23:11:30.355 | INFO     | app.main:health_check:13 - Health check
+2025-11-30 23:11:30.372 | INFO     | app.api.datasets:get_datasets:22 - Listing datasets
+2025-11-30 23:11:34.158 | INFO     | app.main:health_check:13 - Health check
+2025-11-30 23:11:34.174 | INFO     | app.api.datasets:get_datasets:22 - Listing datasets
+2025-11-30 23:11:44.925 | INFO     | app.main:health_check:13 - Health check
+2025-11-30 23:11:44.975 | INFO     | app.api.datasets:get_datasets:22 - Listing datasets
+2025-11-30 23:11:46.065 | INFO     | app.main:health_check:13 - Health check
+2025-11-30 23:11:46.072 | INFO     | app.api.datasets:upload_dataset:10 - Uploading dataset: test.csv
+2025-11-30 23:11:46.110 | INFO     | app.api.datasets:get_datasets:22 - Listing datasets
+2025-11-30 23:12:07.679 | INFO     | app.main:health_check:13 - Health check
+2025-11-30 23:12:07.696 | INFO     | app.api.datasets:get_datasets:22 - Listing datasets

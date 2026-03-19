@@ -1,14 +1,14 @@
 from fastapi import FastAPI
-from app.logging.logging import logger
 from app.api.datasets import router as datasets_router
 from app.api.models import router as models_router
+from app.api.health import router as health_router
+from app.monitoring.metrics import setup_metrics
 
 app = FastAPI(title="ML service")
 
 app.include_router(datasets_router)
 app.include_router(models_router)
+app.include_router(health_router)
 
-@app.get("/health")
-def health_check():
-    logger.info("Health check")
-    return {"status": "ok"}
+setup_metrics(app)
+

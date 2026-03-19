@@ -6,6 +6,7 @@ import joblib
 import uuid
 from app.services.datasets import get_dataset
 from clearml import Task, OutputModel
+from app.logging.logging import logger
 
 MODELS_DIR = Path(__file__).resolve().parents[2] / "data" / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
@@ -15,6 +16,23 @@ MODEL_CLASSES = {
     "logistic_regression": LogisticRegression,
     "random_forest": RandomForestClassifier,
 }
+
+
+def _init_clearml_task(task_name: str, tags: list[str], params: dict, extra: dict | None = None):
+    """Initialize ClearML task if available, otherwise continue without experiment tracking."""
+    try:
+        task = Task.init(
+            project_name="ML Service",
+            task_name=task_name,
+            tags=tags,
+        )
+        task.connect(params)
+        if extra:
+            task.connect(extra)
+        return task
+    except Exception as exc:
+        logger.warning(f"ClearML is unavailable, training will continue without tracking: {exc}")
+        return None
 
 
 def load_dataset(name: str) -> pd.DataFrame:
@@ -37,14 +55,12 @@ def train_model(model_type: str, dataset_name: str, target_column: str, params: 
 
     df = load_dataset(dataset_name)
 
-    task = Task.init(
-        project_name="ML Service",
+    task = _init_clearml_task(
         task_name=f"Train {model_type}",
-        tags=["training"]
+        tags=["training"],
+        params=params,
+        extra={"dataset": dataset_name},
     )
-
-    task.connect(params)
-    task.connect({"dataset": dataset_name})
 
     X = df.drop(columns=[target_column])
     y = df[target_column]
@@ -66,13 +82,13 @@ def train_model(model_type: str, dataset_name: str, target_column: str, params: 
         "features": list(X.columns),
     }, model_path)
 
-    output_model = OutputModel(task=task, name=model_type)
-    output_model.update_weights(
-        weights_filename=str(model_path)
-    )
-    output_model.update_design(dataset_name, params)
-
-    task.mark_completed()
+    if task is not None:
+        output_model = OutputModel(task=task, name=model_type)
+        output_model.update_weights(
+            weights_filename=str(model_path)
+        )
+        output_model.update_design(dataset_name, params)
+        task.mark_completed()
 
     return model_id
 
@@ -132,13 +148,11 @@ def retrain_model(model_id: str, params: dict):
     data, path = load_model(model_id)
     df = load_dataset(data["dataset"])
 
-    task = Task.init(
-        project_name="ML Service",
+    task = _init_clearml_task(
         task_name=f"Retrain {model_id}",
-        tags=["retrain"]
+        tags=["retrain"],
+        params=params,
     )
-
-    task.connect(params)
 
     X = df.drop(columns=[data["target"]])
     y = df[data["target"]]
@@ -152,9 +166,10 @@ def retrain_model(model_id: str, params: dict):
 
     joblib.dump(data, path)
 
-    output_model = OutputModel(task=task, name=f"retrained-{model_id}")
-    output_model.update_weights(str(path))
-    task.mark_completed()
+    if task is not None:
+        output_model = OutputModel(task=task, name=f"retrained-{model_id}")
+        output_model.update_weights(str(path))
+        task.mark_completed()
 
     return model_id
 

@@ -1,53 +1,53 @@
-# Load testing scenarios
+# Сценарии нагрузочного тестирования
 
-## Goal
+## Цель
 
-Validate service behavior under inference load and collect key metrics:
+Проверить поведение сервиса под нагрузкой на инференс и собрать ключевые метрики:
 
-- RPS by endpoint
-- Latency p50/p95/p99
-- Error rate (4xx/5xx)
-- Inference duration p50/p95
+- RPS по эндпоинтам
+- Латентность p50/p95/p99
+- Доля ошибок (4xx/5xx)
+- Время инференса p50/p95
 
-## Scenario 1 - Baseline (steady load)
+## Сценарий 1 - Базовый (стабильная нагрузка)
 
-- 20 users, spawn rate 5 users/sec
-- Duration: 10 minutes
-- Mix:
+- 20 пользователей, скорость запуска 5 пользователей/сек
+- Длительность: 10 минут
+- Смешанная нагрузка:
   - 70% `POST /models/{model_id}/predict`
   - 20% `GET /healthz`
   - 10% `GET /models/`
-- Purpose: capture stable baseline for p50/p95 and RPS.
+- Цель: зафиксировать стабильные базовые значения p50/p95 и RPS.
 
-## Scenario 2 - Stress ramp-up
+## Сценарий 2 - Постепенное наращивание нагрузки
 
-- Start from 20 users, increase to 200 users in steps of 20 every 2 minutes
-- Duration: 20 minutes
-- Same endpoint mix as baseline
-- Purpose: find saturation point where p95 latency and error rate start growing sharply.
+- Старт с 20 пользователей, увеличение до 200 пользователей шагами по 20 каждые 2 минуты
+- Длительность: 20 минут
+- Та же смесь эндпоинтов, что и в базовом сценарии
+- Цель: найти точку насыщения, где p95 латентности и доля ошибок начинают резко расти.
 
-## Scenario 3 - Spike resilience
+## Сценарий 3 - Устойчивость к пиковому всплеску
 
-- Warmup: 30 users for 5 minutes
-- Spike: 300 users for 2 minutes
-- Recovery: 30 users for 8 minutes
-- Purpose: evaluate short burst handling and recovery time.
+- Прогрев: 30 пользователей в течение 5 минут
+- Пик: 300 пользователей в течение 2 минут
+- Восстановление: 30 пользователей в течение 8 минут
+- Цель: оценить обработку кратковременного всплеска и время восстановления.
 
-## Acceptance criteria (initial)
+## Критерии приемки (начальные)
 
-- Error rate < 1% during baseline
-- p95 HTTP latency for predict endpoint < 500ms during baseline
-- p95 inference time < 400ms during baseline
+- Доля ошибок < 1% в базовом сценарии
+- p95 HTTP-латентности для эндпоинта predict < 500ms в базовом сценарии
+- p95 времени инференса < 400ms в базовом сценарии
 
-## PromQL queries
+## PromQL-запросы
 
-### RPS by endpoint
+### RPS по эндпоинтам
 
 ```promql
 sum(rate(http_requests_total{job="ml-rest"}[1m])) by (handler, method)
 ```
 
-### HTTP latency p50/p95/p99
+### HTTP-латентность p50/p95/p99
 
 ```promql
 histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job="ml-rest"}[5m])) by (le, handler))
@@ -55,17 +55,18 @@ histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="ml-r
 histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="ml-rest"}[5m])) by (le, handler))
 ```
 
-### Error rate (4xx+5xx)
+### Доля ошибок (4xx+5xx)
 
 ```promql
 100 * sum(rate(http_requests_total{job="ml-rest",status=~"4..|5.."}[5m])) by (handler)
   / clamp_min(sum(rate(http_requests_total{job="ml-rest"}[5m])) by (handler), 1e-9)
 ```
 
-### Inference duration p50/p95
+### Время инференса p50/p95
 
 ```promql
 histogram_quantile(0.50, sum(rate(ml_inference_duration_seconds_bucket{status="success"}[5m])) by (le))
 histogram_quantile(0.95, sum(rate(ml_inference_duration_seconds_bucket{status="success"}[5m])) by (le))
 ```
+
 
